@@ -9,8 +9,26 @@ int main ()
 
 	/*create Mat objects to hold Images*/
 	cv::Mat srcImg,dstImg;
-	srcImg=cv::imread("./fish.jpg");//open img file
-	cv::imshow("src Img",srcImg);	//display src img to src img window
+
+	/*load img file*/
+	srcImg=cv::imread("./fish.jpg");
+
+	/*display src img to src img window*/
+	cv::imshow("src Img",srcImg);
+
 	cv::waitKey();					//wait for user keyboard input and then exit
 	return 0;
+}
+
+
+void computeEqueRemap(cv::Mat *mapX,cv::Mat *mapY)
+{
+	/*we need to implement the reverse mapping and not the forward.
+	 * that is we have to compute the transformation from plane to sphere
+	 * and then from sphere to 2d circular image.
+	 * Equations from http://paulbourke.net/dome/fish2/index.html
+	 */
+
+	float planarTheta, planarRadius;
+
 }
