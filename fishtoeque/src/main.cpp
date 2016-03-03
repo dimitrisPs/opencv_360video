@@ -9,8 +9,8 @@ int main ()
 
 	/*create Mat objects to hold Images*/
 	cv::Mat srcImg,dstImg;
-	srcImg=cv::imread("./fish.jpg");
-	cv::imshow("src Img",srcImg);
-	cv::waitKey();
+	srcImg=cv::imread("./fish.jpg");//open img file
+	cv::imshow("src Img",srcImg);	//display src img to src img window
+	cv::waitKey();					//wait for user keyboard input and then exit
 	return 0;
 }
