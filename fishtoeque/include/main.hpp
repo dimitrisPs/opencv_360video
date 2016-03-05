@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#define EQUE_HEIGHT 480
-#define EQUE_WIDTH	2*EQUE_HEIGHT
-#define FISHEYE_ANGLE 180
+#define EQUE_HEIGHT 50
+#define EQUE_WIDTH	EQUE_HEIGHT
+#define FISHEYE_ANGLE M_PI
 
 
 
