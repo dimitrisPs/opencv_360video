@@ -105,10 +105,10 @@ bool Camera360::setResolution(int resolutionId)
 	case 5:
 		return this->setResolutionHelper(1280,720);
 		break;
-	case 4:
+	case 6:
 		return this->setResolutionHelper(1280,1024);
 		break;
-	case 5:
+	case 7:
 		return this->setResolutionHelper(1920,1080);
 		break;
 	}
@@ -123,44 +123,163 @@ bool Camera360::setResolutionHelper(int width,int height)
 	this->sensor2.set(CV_CAP_PROP_FRAME_WIDTH,width);
 	this->sensor2.set(CV_CAP_PROP_FRAME_HEIGHT,height);
 	testRes =this->getResolution();
-	if (testRes.x==width & testRes.y==height)
+	if ((testRes.x==width) & (testRes.y==height) )
 		return true;
 	return false;
 }
 
 bool Camera360::setFormat(int formatId)
 {
-	return true;
+
+	switch(formatId)
+	{
+		case 1:
+			this->sensor1.set(CV_CAP_PROP_FOURCC,CV_FOURCC('M', 'J', 'P', 'G'));
+			this->sensor2.set(CV_CAP_PROP_FOURCC,CV_FOURCC('M', 'J', 'P', 'G'));
+			break;
+		case 2:
+			this->sensor1.set(CV_CAP_PROP_FOURCC,CV_FOURCC('Y', 'U', 'Y', 'V'));
+			this->sensor2.set(CV_CAP_PROP_FOURCC,CV_FOURCC('Y', 'U', 'Y', 'V'));
+			break;
+	}
+	if ((formatId==1) & (this->getFormat().compare("MPEG")) )
+		return true;
+	else if ( (formatId==2) & (this->getFormat().compare("YUYV")) )
+		return true;
+	return false;
 }
 
 bool Camera360::setBrightness(double val)
 {
-	return true;
+	if (val>1)
+		return false;
+	this->sensor1.set(CV_CAP_PROP_BRIGHTNESS,val);
+	this->sensor2.set(CV_CAP_PROP_BRIGHTNESS,val);
+	if (this->getBrightness()==val)
+		return true;
+	return false;
 }
 
 bool Camera360::setContrast(double val)
 {
-	return true;
+	if (val>1)
+		return false;
+	this->sensor1.set(CV_CAP_PROP_CONTRAST,val);
+	this->sensor2.set(CV_CAP_PROP_CONTRAST,val);
+	if (this->getContrast()==val)
+		return true;
+	return false;
 }
 
 bool Camera360::setSaturation(double val)
 {
-	return true;
+	if (val>1)
+		return false;
+	this->sensor1.set(CV_CAP_PROP_SATURATION,val);
+	this->sensor2.set(CV_CAP_PROP_SATURATION,val);
+	if (this->getSaturation()==val)
+		return true;
+	return false;
 }
 
-bool Camera360::sethue(double val)
+bool Camera360::setHue(double val)
 {
-	return true;
+	if (val>1)
+		return false;
+	this->sensor1.set(CV_CAP_PROP_HUE,val);
+	this->sensor2.set(CV_CAP_PROP_HUE,val);
+	if (this->getHue()==val)
+		return true;
+	return false;
 }
 
 bool Camera360::setGain(double val)
 {
-	return true;
+	if (val>1)
+		return false;
+	this->sensor1.set(CV_CAP_PROP_GAIN,val);
+	this->sensor2.set(CV_CAP_PROP_GAIN,val);
+	if (this->getGain()==val)
+		return true;
+	return false;
 }
 
-bool Camera360::setSettingsHud(int HUDState)
+void Camera360::setSettingsHud(int HUDState)
 {
-	return true;
+	switch(HUDState)
+	{
+	case 1:
+		this->displayParamHUD=true;
+		break;
+	case 2:
+		this->displayParamHUD=true;
+		break;
+	}
+}
+
+bool Camera360::readFrame(cv::Mat &frameMat, int sensorId)
+{
+	switch(sensorId)
+	{
+	case 0:
+		this->sensor1.grab();
+		this->sensor2.grab();
+		if (this->flipCropSetting)
+		{
+			this->sensor1.retrieve(this->cameraInitialFrame2);
+			this->sensor2.retrieve(this->cameraInitialFrame1);
+		}
+		else
+		{
+			this->sensor1.retrieve(this->cameraInitialFrame1);
+			this->sensor2.retrieve(this->cameraInitialFrame2);
+		}
+
+		//Merge frames
+
+		//Apply projections
+
+		break;
+	case 1:
+		if (this->flipCropSetting)
+			this->sensor1.read(this->cameraInitialFrame2);
+		else
+			this->sensor2.read(this->cameraInitialFrame1);
+		break;
+	case 2:
+		if (this->flipCropSetting)
+			this->sensor2.read(this->cameraInitialFrame1);
+		else
+			this->sensor2.read(this->cameraInitialFrame2);
+		break;
+	}
+	//if either frame is empty stop
+	if (this->cameraInitialFrame1.empty() | this->cameraInitialFrame2.empty())
+		return false;
+
+	return false;
+}
+void Camera360::readCropParameters()
+{
+	ofstream roiFile;
+	int sWidthStr,sHeightStr,widthStr,heightStr;
+	roiFile.open ("../sensor1_roi.txt",ios::in);
+	if (!roiFile.is_open())
+		return;
+	roiFile >> sWidthStr >> sHeightStr >> widthStr >> heightStr;
+	this->cameraROI1.Rect_(sWidthStr,sHeightStr,widthStr,heightStr);
+	roiFile.close();
+	roiFile.open ("../sensor2_roi.txt",ios::in);
+	if (!roiFile.is_open())
+		return;
+	roiFile >> sWidthStr >> sHeightStr >> widthStr >> heightStr;
+	this->cameraROI2.Rect_(sWidthStr,sHeightStr,widthStr,heightStr);
+}
+
+void cropFrame(int frameId)
+{
+
+
 }
 
 

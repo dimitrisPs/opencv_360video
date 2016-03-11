@@ -11,6 +11,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
+#include <fstream>
 #include <string>
 
 using namespace std;
@@ -45,6 +46,18 @@ enum
 	CAMERA360_SENSOR_TWO   = 2
 };
 
+enum
+{
+	ROI1 = 1,
+	ROI2 = 2
+};
+
+enum
+{
+	INIT_FRAME_1 = 1,
+	INIT_FRAME_1= 2
+};
+
 
 class	Camera360
 {
@@ -70,8 +83,10 @@ public:
 
 	//set property functions
 
+	//prepei na setarw ta fps
 	bool setResolution(int resolutionId);
 
+	//prepei na setarw ta fps
 	bool setFormat(int formatId);
 
 	bool setBrightness(double val);
@@ -80,11 +95,11 @@ public:
 
 	bool setSaturation(double val);
 
-	bool sethue(double val);
+	bool setHue(double val);
 
 	bool setGain(double val);
 
-	bool setSettingsHud(int HUDState);
+	void setSettingsHud(int HUDState);
 
 	//get frames
 
@@ -104,7 +119,12 @@ private:
 
 	void meargecameraFrames();
 	void cropFrame(int frameId,int roiId);
-	bool setResolutionHelper(int width,int width);
+	bool setResolutionHelper(int width,int height);
+	void cropFrame(int frameId);
+	void meargeFrames();
+	void readCropParameters();
+
+
 
 
 	bool flipCropSetting;
