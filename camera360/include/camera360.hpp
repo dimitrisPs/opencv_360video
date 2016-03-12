@@ -13,6 +13,11 @@
 #include <stdio.h>
 #include <fstream>
 #include <string>
+#include <cerrno>
+
+
+
+#define LENS_ANGLE 185
 
 using namespace std;
 
@@ -48,23 +53,35 @@ enum
 
 enum
 {
-	ROI1 = 1,
-	ROI2 = 2
+	CAMERA360_ROI1 = 1,
+	CAMERA360_ROI2 = 2
 };
 
 enum
 {
-	INIT_FRAME_1 = 1,
-	INIT_FRAME_1= 2
+	CAMERA360_INIT_FRAME_1 = 1,
+	CAMERA360_INIT_FRAME_2 = 2
+};
+
+enum
+{
+	CAMERA360_SENSOR_1 = 1,
+	CAMERA360_SENSOR_2 = 2,
+};
+enum
+{
+	CAMERA360_NO_CROP = 1,
+	CAMERA360_NO_CROP = 2,
 };
 
 
 class	Camera360
 {
-	Camera360();
+	//Camera360();
+
+public:
 	Camera360(int cameraIdx1,int cameraIdx2);
 	~Camera360();
-public:
 	//get propetry functions
 
 	cv::Point getResolution();
@@ -109,6 +126,8 @@ public:
 
 	void computeEquerectangularTransformation();
 
+	void setCropArea(int sensorId,cv::Rect roi);
+
 
 
 	//operator overloading
@@ -117,22 +136,49 @@ public:
 
 private:
 
-	void meargecameraFrames();
 	void cropFrame(int frameId,int roiId);
+
 	bool setResolutionHelper(int width,int height);
+
 	void cropFrame(int frameId);
-	void meargeFrames();
-	void readCropParameters();
+
+	void mergeFrames();
+
+	bool readCropParameters(int sensorId);
 
 
 
-
+	bool cameraCanStream;
 	bool flipCropSetting;
 	bool displayParamHUD;			//for displying parameters on main frame
+	bool sensor1HasCropParameters;
+	bool sensor2HasCropParameters;
+
+	cv::Point parameterSensorsResolution;
+	cv::Point parameterMergedResolution;
+	double 	  parameterContrast;
+	double    parameterBrightness;
+	double    parameterGain;
+	double    parameterHue;
+	double 	  parameterSaturation;
+	string 	  format;
+
+	std::ostringstream HUDresolutionStr;
+	std::ostringstream HUDformatStr;
+	std::ostringstream HUDmodeStr;
+	std::ostringstream HUDbrightnessStr;
+	std::ostringstream HUDcontrastStr;
+	std::ostringstream HUDsaturationStr;
+	std::ostringstream HUDhueStr;
+	std::ostringstream HUDgainStr;
+
 
 	cv::Mat	cameraInitialFrame1;
 	cv::Mat	cameraInitialFrame2;
+	cv::Mat mergedFrame;
 	cv::Mat outputFrame;
+	cv::Mat equeMapX;
+	cv::Mat equeMapY;
 	cv::Rect cameraROI1;
 	cv::Rect cameraROI2;
 

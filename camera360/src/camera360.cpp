@@ -7,26 +7,96 @@
 #include "camera360.hpp"
 
 
+
+
+Camera360::Camera360(int cameraIdx1,int cameraIdx2)
+{
+	this->sensor1.open(cameraIdx1);
+	if (!this->sensor1.isOpened())
+	{
+		cerr<<"camera 1 could not be opened"<<endl;
+		this->cameraCanStream=false;
+		return;
+	}
+	this->sensor2.open(cameraIdx2);
+	if (!this->sensor2.isOpened())
+	{
+		cerr<<"camera 2 could not be opened"<<endl;
+		this->cameraCanStream=false;
+		return;
+	}
+	this->cameraCanStream=true;
+	//default settings
+	if (!this->setBrightness(0.5) |
+		!this->setContrast(0.5) |
+		!this->setGain(0) |
+		!this->setResolution(CAMERA360_RESOLUTION_1280_X_1024) |
+		!this->setHue(0.5))
+	{
+		cerr<<"couldn't set correctly camera parameters"<<endl;
+		return;
+	}
+	if (!this->readCropParameters(CAMERA360_SENSOR_1))
+	{
+		cerr<<"camera parameters for first sensor not found"<<endl;
+		this->cameraCanStream=false;
+		this->sensor1HasCropParameters=false;
+		this->cameraROI1.x=0;
+		this->cameraROI1.y=0;
+		this->cameraROI1.width=this->sensor1.get(CV_CAP_PROP_FRAME_WIDTH);
+		this->cameraROI1.height=this->sensor1.get(CV_CAP_PROP_FRAME_HEIGHT);
+	}
+	else
+		this->sensor1HasCropParameters=true;
+	if  (!this->readCropParameters(CAMERA360_SENSOR_2))
+	{
+		cerr<<"camera parameters for second sensor not found"<<endl;
+		this->cameraCanStream=false;
+		this->sensor2HasCropParameters=false;
+		this->cameraROI2.x=0;
+		this->cameraROI2.y=0;
+		this->cameraROI2.width=this->sensor2.get(CV_CAP_PROP_FRAME_WIDTH);
+		this->cameraROI2.height=this->sensor2.get(CV_CAP_PROP_FRAME_HEIGHT);
+	}
+	else
+		this->sensor2HasCropParameters=true;
+	this->displayParamHUD=false;
+	this->flipCropSetting=false;
+}
+
+Camera360::~Camera360()
+{
+	this->sensor1.release();
+	this->sensor2.release();
+	this->cameraInitialFrame1.release();
+	this->cameraInitialFrame2.release();
+	this->equeMapX.release();
+	this->equeMapY.release();
+
+}
+
 cv::Point Camera360::getResolution()
 {
-	int tempHeight,tempWidth;
+	int sensor1Height,sensor1Width, sensor2Height,sensor2Width;
 	cv::Point p;
-	tempHeight = this->sensor1.get(CV_CAP_PROP_FRAME_HEIGHT);
-	tempWidth = this->sensor1.get(CV_CAP_PROP_FRAME_WIDTH);
-	if (tempHeight != this->sensor2.get(CV_CAP_PROP_FRAME_HEIGHT) )
+	sensor1Height = this->sensor1.get(CV_CAP_PROP_FRAME_HEIGHT);
+	sensor1Width = this->sensor1.get(CV_CAP_PROP_FRAME_WIDTH);
+	sensor2Height = this->sensor2.get(CV_CAP_PROP_FRAME_HEIGHT);
+	sensor2Width = this->sensor2.get(CV_CAP_PROP_FRAME_WIDTH);
+	if (sensor1Height != sensor1Height )
 	{
 		p.x=-1;
 		p.y=-1;
 	}
-	else if  (tempWidth!=this->sensor2.get(CV_CAP_PROP_FRAME_WIDTH))
+	else if  (sensor1Width!=sensor2Width)
 	{
 		p.x=-1;
 		p.y=-1;
 	}
 	else
 	{
-		p.x=tempWidth;
-		p.y=tempHeight;
+		p.x=sensor1Width;
+		p.y=sensor1Height;
 	}
 	return p;
 }
@@ -234,54 +304,121 @@ bool Camera360::readFrame(cv::Mat &frameMat, int sensorId)
 			this->sensor1.retrieve(this->cameraInitialFrame1);
 			this->sensor2.retrieve(this->cameraInitialFrame2);
 		}
-
+		//crop frames
+		if (this->sensor1HasCropParameters)
+			this->cameraInitialFrame1=cameraInitialFrame1(this->cameraROI1);
+		if (this->sensor2HasCropParameters)
+			this->cameraInitialFrame2=cameraInitialFrame2(this->cameraROI2);
 		//Merge frames
-
+		this->mergeFrames();
 		//Apply projections
-
+		frameMat=this->mergedFrame;
 		break;
 	case 1:
 		if (this->flipCropSetting)
+		{
 			this->sensor1.read(this->cameraInitialFrame2);
+			frameMat=this->cameraInitialFrame2;
+		}
 		else
-			this->sensor2.read(this->cameraInitialFrame1);
+		{
+			this->sensor1.read(this->cameraInitialFrame1);
+			frameMat=this->cameraInitialFrame1;
+		}
+
+
 		break;
 	case 2:
 		if (this->flipCropSetting)
+		{
 			this->sensor2.read(this->cameraInitialFrame1);
+			frameMat=this->cameraInitialFrame1;
+		}
 		else
+		{
 			this->sensor2.read(this->cameraInitialFrame2);
+			frameMat=this->cameraInitialFrame2;
+		}
 		break;
 	}
 	//if either frame is empty stop
 	if (this->cameraInitialFrame1.empty() | this->cameraInitialFrame2.empty())
 		return false;
 
+
 	return false;
 }
-void Camera360::readCropParameters()
+bool Camera360::readCropParameters(int sensorId)
 {
-	ofstream roiFile;
+	ifstream roiFile;
 	int sWidthStr,sHeightStr,widthStr,heightStr;
-	roiFile.open ("../sensor1_roi.txt",ios::in);
+	roiFile.open ("../sensor1_roi.txt",fstream::in);
 	if (!roiFile.is_open())
-		return;
+		return false;
 	roiFile >> sWidthStr >> sHeightStr >> widthStr >> heightStr;
-	this->cameraROI1.Rect_(sWidthStr,sHeightStr,widthStr,heightStr);
+	this->cameraROI1 = cv::Rect(sWidthStr,sHeightStr,widthStr,heightStr);
 	roiFile.close();
 	roiFile.open ("../sensor2_roi.txt",ios::in);
 	if (!roiFile.is_open())
-		return;
+		return false;
 	roiFile >> sWidthStr >> sHeightStr >> widthStr >> heightStr;
-	this->cameraROI2.Rect_(sWidthStr,sHeightStr,widthStr,heightStr);
+	this->cameraROI2 = cv::Rect(sWidthStr,sHeightStr,widthStr,heightStr);
+	return true;
 }
 
-void cropFrame(int frameId)
+void Camera360::mergeFrames()
+{
+	int mergedHeight,mergedWidth;
+	if (this->sensor1HasCropParameters | this->sensor2HasCropParameters)
+	{
+		if (this->cameraROI1.height > this->cameraROI2.height)
+		{
+			mergedHeight=this->cameraROI1.height;
+		}
+		else
+		{
+			mergedHeight=this->cameraROI2.height;
+		}
+		//this is because if the image is croped it will be square
+		mergedWidth=mergedHeight;
+
+		cv::resize(this->cameraInitialFrame1,this->cameraInitialFrame1,cv::Size(mergedHeight,mergedHeight));
+		cv::resize(this->cameraInitialFrame2,this->cameraInitialFrame2,cv::Size(mergedHeight,mergedHeight));
+	}
+	else
+	{
+		//if they are not cropped will have the same resolution
+		mergedHeight=this->cameraROI1.height;
+		mergedWidth=this->cameraROI1.width;
+
+	}
+	cv::Rect rightResultROI(0,0,mergedWidth,mergedHeight);
+	cv::Rect leftResultROI(mergedWidth,0,mergedWidth,mergedHeight);
+	cv::Mat ResultROI;
+
+	this->mergedFrame.create(mergedHeight,mergedWidth*2,this->cameraInitialFrame1.type());
+
+	//resize images
+
+	//mearge images
+	ResultROI = this->mergedFrame(rightResultROI);
+	this->cameraInitialFrame1.copyTo(ResultROI);
+	ResultROI = this->mergedFrame(leftResultROI);
+	this->cameraInitialFrame2.copyTo(ResultROI);
+}
+
+void Camera360::setCropArea(int sensorId,cv::Rect roi)
 {
 
+	stringstream filename;
+	ofstream roiFile;
+	filename<<"./sensor"<< sensorId<<"_"<<this->getResolution().x<<"x"<<this->getResolution().y<<".txt";
+	roiFile.open(filename.str().c_str());
+	roiFile<<roi.x<<"\t"<<roi.y<<"\t"<<roi.width<<"\t"<<roi.height;
 
+	//update local class roi
+	if (sensorId==1)
+		this->cameraROI1=roi;
+	else
+		this->cameraROI2=roi;
 }
-
-
-
-
