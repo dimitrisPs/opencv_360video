@@ -146,6 +146,11 @@ private:
 
 	bool readCropParameters(int sensorId);
 
+	void HUDUpdateInfos();
+
+	void HUDParameterInit();
+
+
 
 
 	bool cameraCanStream;
@@ -154,6 +159,10 @@ private:
 	bool sensor1HasCropParameters;
 	bool sensor2HasCropParameters;
 
+
+
+	//parametr HUD variables
+
 	cv::Point parameterSensorsResolution;
 	cv::Point parameterMergedResolution;
 	double 	  parameterContrast;
@@ -161,16 +170,19 @@ private:
 	double    parameterGain;
 	double    parameterHue;
 	double 	  parameterSaturation;
-	string 	  format;
+	string 	  parameterformat;
+
+	int HUDFont;
+	int HUDVerticalSpacing;
 
 	std::ostringstream HUDresolutionStr;
 	std::ostringstream HUDformatStr;
-	std::ostringstream HUDmodeStr;
 	std::ostringstream HUDbrightnessStr;
 	std::ostringstream HUDcontrastStr;
 	std::ostringstream HUDsaturationStr;
 	std::ostringstream HUDhueStr;
 	std::ostringstream HUDgainStr;
+
 
 
 	cv::Mat	cameraInitialFrame1;
