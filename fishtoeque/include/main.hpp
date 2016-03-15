@@ -6,7 +6,7 @@
 
 #define EQUE_HEIGHT 50
 #define EQUE_WIDTH	EQUE_HEIGHT
-#define FISHEYE_ANGLE 185 * ( M_PI /180 )//3.22885912//M_PI//
+#define FISHEYE_ANGLE 194 * ( M_PI /180 )//3.22885912//M_PI//
 
 
 
@@ -22,10 +22,11 @@ void computeEqueRemap3(cv::Mat *mapX,cv::Mat *mapY);
 
 void computeEqueRemap4(cv::Mat *mapX,cv::Mat *mapY);
 
-
+void computeEqueRemap5(cv::Mat *mapX,cv::Mat *mapY);
 void addBoarder(const cv::Mat &src,cv::Mat &result);
 
 void extBoarderRight(const cv::Mat &src,cv::Mat &result);
 void extBoarderLeft(const cv::Mat &src,cv::Mat &result);
 
 void mirror(const cv::Mat &src,cv::Mat &result);
+
