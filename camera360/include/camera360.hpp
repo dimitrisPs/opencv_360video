@@ -40,8 +40,9 @@ enum
 
 enum
 {
-	CAMERA360_HUD_SETTINGS_ENABLE  = 1,
-	CAMERA360_HUD_SETTINGS_DISABLE = 2
+	CAMERA360_HUD_SETTINGS_DISABLE = 0,
+	CAMERA360_HUD_SETTINGS_ENABLE  = 1
+
 };
 
 enum
@@ -70,7 +71,7 @@ enum
 };
 enum
 {
-	CAMERA360_NO_CROP = 1,
+	CAMERA360_CROP = 1,
 	CAMERA360_NO_CROP = 2,
 };
 
@@ -120,13 +121,15 @@ public:
 
 	//get frames
 
-	bool readFrame(cv::Mat &frameMat, int sensorId=0);
+	bool readFrame(cv::Mat &frameMat, int sensorId=0, bool applyCrop=true);
 
 	// compute remapping transformations
 
 	void computeEquerectangularTransformation();
 
 	void setCropArea(int sensorId,cv::Rect roi);
+
+	bool flipSensors();
 
 
 
@@ -146,7 +149,7 @@ private:
 
 	bool readCropParameters(int sensorId);
 
-	void HUDUpdateInfos();
+	void HUDUpdateInfos(cv::Mat &targetFrame );
 
 	void HUDParameterInit();
 
@@ -154,7 +157,6 @@ private:
 
 
 	bool cameraCanStream;
-	bool flipCropSetting;
 	bool displayParamHUD;			//for displying parameters on main frame
 	bool sensor1HasCropParameters;
 	bool sensor2HasCropParameters;

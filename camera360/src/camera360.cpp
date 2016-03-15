@@ -62,7 +62,6 @@ Camera360::Camera360(int cameraIdx1,int cameraIdx2)
 		this->sensor2HasCropParameters=true;
 	HUDParameterInit();
 	this->displayParamHUD=false;
-	this->flipCropSetting=false;
 }
 
 Camera360::~Camera360()
@@ -221,6 +220,7 @@ bool Camera360::setFormat(int formatId)
 	}
 	if ((formatId==1) & (this->getFormat().compare("MPEG")) )
 	{
+		this->HUDformatStr.str("");
 		this->parameterformat = "MPEG";
 		this->HUDformatStr		<<" format    : "<< this->parameterformat;
 		return true;
@@ -242,6 +242,7 @@ bool Camera360::setBrightness(double val)
 	this->sensor2.set(CV_CAP_PROP_BRIGHTNESS,val);
 	if (this->getBrightness()==val)
 	{
+		this->HUDbrightnessStr.str("");
 		this->parameterBrightness = val;
 		this->HUDbrightnessStr	<<" brightness: "<< this->parameterBrightness;
 		return true;
@@ -257,6 +258,7 @@ bool Camera360::setContrast(double val)
 	this->sensor2.set(CV_CAP_PROP_CONTRAST,val);
 	if (this->getContrast()==val)
 	{
+		this->HUDcontrastStr.str("");
 		this->parameterContrast= val;
 		this->HUDcontrastStr	<<" contrast  : "<< this->parameterContrast;
 		return true;
@@ -272,6 +274,7 @@ bool Camera360::setSaturation(double val)
 	this->sensor2.set(CV_CAP_PROP_SATURATION,val);
 	if (this->getSaturation()==val)
 	{
+		this->HUDsaturationStr.str("");
 		this->parameterSaturation= val;
 		this->HUDsaturationStr	<<" saturation: "<< this->parameterSaturation;
 		return true;
@@ -287,6 +290,7 @@ bool Camera360::setHue(double val)
 	this->sensor2.set(CV_CAP_PROP_HUE,val);
 	if (this->getHue()==val)
 	{
+		this->HUDhueStr.str("");
 		this->parameterHue=val;
 		this->HUDhueStr			<<" hue       : "<< this->parameterHue;
 		return true;
@@ -302,6 +306,7 @@ bool Camera360::setGain(double val)
 	this->sensor2.set(CV_CAP_PROP_GAIN,val);
 	if (this->getGain()==val)
 	{
+		this->HUDgainStr.str("");
 		this->parameterGain=val;
 		this->HUDgainStr 		<<" gain      : "<< this->parameterGain;
 		return true;
@@ -313,72 +318,68 @@ void Camera360::setSettingsHud(int HUDState)
 {
 	switch(HUDState)
 	{
-	case 1:
-		this->displayParamHUD=true;
+	case 0:
+		this->displayParamHUD=false;
 		break;
-	case 2:
+	case 1:
 		this->displayParamHUD=true;
 		break;
 	}
 }
 
-bool Camera360::readFrame(cv::Mat &frameMat, int sensorId)
+bool Camera360::readFrame(cv::Mat &frameMat, int sensorId,bool applyCrop)
 {
 	switch(sensorId)
 	{
 	case 0:
 		this->sensor1.grab();
 		this->sensor2.grab();
-		if (this->flipCropSetting)
-		{
-			this->sensor1.retrieve(this->cameraInitialFrame2);
-			this->sensor2.retrieve(this->cameraInitialFrame1);
-		}
-		else
-		{
-			this->sensor1.retrieve(this->cameraInitialFrame1);
-			this->sensor2.retrieve(this->cameraInitialFrame2);
-		}
+		this->sensor1.retrieve(this->cameraInitialFrame1);
+		this->sensor2.retrieve(this->cameraInitialFrame2);
+
+
+		if (this->cameraInitialFrame1.empty() | this->cameraInitialFrame2.empty())
+			return false;
+
 		//crop frames
-		if (this->sensor1HasCropParameters)
+		if (this->sensor1HasCropParameters & applyCrop)
 			this->cameraInitialFrame1=cameraInitialFrame1(this->cameraROI1);
-		if (this->sensor2HasCropParameters)
+		if (this->sensor2HasCropParameters & applyCrop)
 			this->cameraInitialFrame2=cameraInitialFrame2(this->cameraROI2);
 		//Merge frames
 		this->mergeFrames();
 		//Apply projections
+		if (this->displayParamHUD)
+			HUDUpdateInfos(this->mergedFrame );
 		frameMat=this->mergedFrame;
 		break;
+
+
+
 	case 1:
-		if (this->flipCropSetting)
-		{
-			this->sensor1.read(this->cameraInitialFrame2);
-			frameMat=this->cameraInitialFrame2;
-		}
-		else
-		{
-			this->sensor1.read(this->cameraInitialFrame1);
-			frameMat=this->cameraInitialFrame1;
-		}
+		this->sensor1.read(this->cameraInitialFrame1);
+		if (this->cameraInitialFrame1.empty())
+			return false;
+		if (this->sensor1HasCropParameters & applyCrop)
+			this->cameraInitialFrame1=cameraInitialFrame1(this->cameraROI1);
 
-
+		frameMat=this->cameraInitialFrame1;
 		break;
+
+
+
 	case 2:
-		if (this->flipCropSetting)
-		{
-			this->sensor2.read(this->cameraInitialFrame1);
-			frameMat=this->cameraInitialFrame1;
-		}
-		else
-		{
-			this->sensor2.read(this->cameraInitialFrame2);
-			frameMat=this->cameraInitialFrame2;
-		}
+		this->sensor2.read(this->cameraInitialFrame2);
+		if (this->cameraInitialFrame2.empty())
+			return false;
+		if (this->sensor2HasCropParameters & applyCrop)
+			this->cameraInitialFrame2=cameraInitialFrame2(this->cameraROI2);
+
+		frameMat=this->cameraInitialFrame2;
 		break;
 	}
 	//if either frame is empty stop
-	if (this->cameraInitialFrame1.empty() | this->cameraInitialFrame2.empty())
-		return false;
+
 
 
 	return false;
@@ -386,18 +387,18 @@ bool Camera360::readFrame(cv::Mat &frameMat, int sensorId)
 bool Camera360::readCropParameters(int sensorId)
 {
 	ifstream roiFile;
+	stringstream filename;
 	int sWidthStr,sHeightStr,widthStr,heightStr;
-	roiFile.open ("../sensor1_roi.txt",fstream::in);
+	filename<<"./sensor"<< sensorId<<"_"<<this->getResolution().x<<"x"<<this->getResolution().y<<".txt";
+	roiFile.open (filename.str().c_str(),fstream::in);
 	if (!roiFile.is_open())
 		return false;
 	roiFile >> sWidthStr >> sHeightStr >> widthStr >> heightStr;
-	this->cameraROI1 = cv::Rect(sWidthStr,sHeightStr,widthStr,heightStr);
+	if (sensorId==CAMERA360_SENSOR_1)
+		this->cameraROI1 = cv::Rect(sWidthStr,sHeightStr,widthStr,heightStr);
+	else
+		this->cameraROI2 = cv::Rect(sWidthStr,sHeightStr,widthStr,heightStr);
 	roiFile.close();
-	roiFile.open ("../sensor2_roi.txt",ios::in);
-	if (!roiFile.is_open())
-		return false;
-	roiFile >> sWidthStr >> sHeightStr >> widthStr >> heightStr;
-	this->cameraROI2 = cv::Rect(sWidthStr,sHeightStr,widthStr,heightStr);
 	return true;
 }
 
@@ -453,27 +454,32 @@ void Camera360::setCropArea(int sensorId,cv::Rect roi)
 
 	//update local class roi
 	if (sensorId==1)
+	{
 		this->cameraROI1=roi;
+		this->sensor1HasCropParameters=true;
+	}
 	else
+	{
 		this->cameraROI2=roi;
+		this->sensor2HasCropParameters=true;
+	}
 }
 
-void Camera360::HUDUpdateInfos()
+void Camera360::HUDUpdateInfos(cv::Mat &targetFrame )
 {
-	cv::putText(this->outputFrame, this->HUDresolutionStr.str()	, cv::Point(5,this->HUDVerticalSpacing)  , cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
-	cv::putText(this->outputFrame, this->HUDformatStr	.str()		, cv::Point(5,this->HUDVerticalSpacing*2), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
-	cv::putText(this->outputFrame, this->HUDbrightnessStr.str()	, cv::Point(5,this->HUDVerticalSpacing*4), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
-	cv::putText(this->outputFrame, this->HUDcontrastStr.str()	, cv::Point(5,this->HUDVerticalSpacing*5), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
-	cv::putText(this->outputFrame, this->HUDsaturationStr.str()	, cv::Point(5,this->HUDVerticalSpacing*6), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
-	cv::putText(this->outputFrame, this->HUDhueStr.str()			, cv::Point(5,this->HUDVerticalSpacing*7), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
-	cv::putText(this->outputFrame, this->HUDgainStr .str()		, cv::Point(5,this->HUDVerticalSpacing*8), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDresolutionStr.str()	, cv::Point(5,this->HUDVerticalSpacing)  , cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDformatStr	.str()		, cv::Point(5,this->HUDVerticalSpacing*2), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDbrightnessStr.str()	, cv::Point(5,this->HUDVerticalSpacing*4), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDcontrastStr.str()	, cv::Point(5,this->HUDVerticalSpacing*5), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDsaturationStr.str()	, cv::Point(5,this->HUDVerticalSpacing*6), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDhueStr.str()			, cv::Point(5,this->HUDVerticalSpacing*7), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
+	cv::putText(targetFrame, this->HUDgainStr .str()		, cv::Point(5,this->HUDVerticalSpacing*8), cv::FONT_HERSHEY_PLAIN, this->HUDFont, cv::Scalar(255,255,255), 1);
 
 
 }
 
 void Camera360::HUDParameterInit()
 {
-
 	this->parameterSensorsResolution= this->getResolution();
 	this->parameterformat			= this->getFormat();
 	this->parameterBrightness		= this->getBrightness();
@@ -482,6 +488,22 @@ void Camera360::HUDParameterInit()
 	this->parameterHue				= this->getHue();
 	this->parameterGain				= this->getGain();
 
+	if (this->parameterSensorsResolution.y>800)
+		this->HUDFont=3;
+	else if (this->parameterSensorsResolution.y>700)
+		this->HUDFont=2;
+	else
+		this->HUDFont=1;
+	this->HUDVerticalSpacing=15*HUDFont;
+
+	this->HUDresolutionStr.str("");
+	this->HUDformatStr.str("");
+	this->HUDbrightnessStr.str("");
+	this->HUDcontrastStr.str("");
+	this->HUDsaturationStr.str("");
+	this->HUDhueStr.str("");
+	this->HUDgainStr.str("");
+
 	this->HUDresolutionStr	<<" resolution: "<< this->parameterSensorsResolution.x<< "x" << this->parameterSensorsResolution.y;
 	this->HUDformatStr		<<" format    : "<< this->parameterformat;
 	this->HUDbrightnessStr	<<" brightness: "<< this->parameterBrightness;
@@ -489,4 +511,15 @@ void Camera360::HUDParameterInit()
 	this->HUDsaturationStr	<<" saturation: "<< this->parameterSaturation;
 	this->HUDhueStr			<<" hue       : "<< this->parameterHue;
 	this->HUDgainStr 		<<" gain      : "<< this->parameterGain;
+}
+
+
+//ok
+bool Camera360::flipSensors()
+{
+	cv::VideoCapture tempSens;
+	tempSens=(this->sensor1);
+	(this->sensor1)=(this->sensor2);
+	(this->sensor2)=tempSens;
+	return true;
 }
