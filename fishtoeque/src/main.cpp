@@ -47,9 +47,9 @@ int main ()
 //	extImg.create(srcImg.size().height,srcImg.size().width*2, srcImg.type());
 //	mirror(srcImg,extImg);
 
-	extImg= cv::imread("../../Desktop/test1.jpg");
-	srcImg1=cv::imread("./input-00.jpg");
-	srcImg2=cv::imread("./input-01.jpg");
+//	extImg= cv::imread("../../Desktop/test1.jpg");
+	srcImg1=cv::imread("/home/dimitris/Pictures/fisheye/1.jpg");
+	srcImg2=cv::imread("/home/dimitris/Pictures/fisheye/2.jpg");
 //	addBoarder(srcImg,extImg);
 //	extBoarderLeft(srcImg,extImg);
 
@@ -92,7 +92,7 @@ int main ()
 
 
 	/*display src img to src img window*/
-	cv::imshow("src Img",extImg);
+//	cv::imshow("src Img",extImg);
 	cv::imshow("result Img1",dstImg);
 	cv::imshow("result Img2",dstImg2);
 //	cv::imshow("f",dst);
