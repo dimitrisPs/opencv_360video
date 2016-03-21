@@ -1,13 +1,13 @@
 #include "opencv2/core/core.hpp"
-#include <string.h>
+#include <string>
 
 using namespace std;
 
-#define FISHEYE_ANGLE 181 * ( M_PI /180 )//3.22885912//M_PI//
+#define FISHEYE_ANGLE 180 * ( M_PI /180 )//3.22885912//M_PI//
 
 bool DISPLAY_HUD=false;
 bool CROP_MODE=false;
-
+bool EQUE_MODE=false;
 int FOO;
 
 bool CROP_SENSOR_FRONT = false;
@@ -40,6 +40,8 @@ void onSensorFlip(int state, void *pointer);
 void onHUDPushed(int state, void *pointer);
 
 void onCropModePushed(int state, void *pointer);
+
+void onEqueModePushed(int state, void *pointer);
 
 void onCropFrontSelect(int state, void *pointer);
 

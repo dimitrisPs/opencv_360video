@@ -1,10 +1,10 @@
+#define _GLIBCXX_USE_CXX11_ABI 0
 #include "main.hpp"
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "camera360.hpp"
 
-Camera360 camera(2,1);
-
+Camera360 camera(1,2);
 int main ()
 {
 	bool first =true;
@@ -29,6 +29,7 @@ int main ()
 	cv::createButton("flip sensors",onSensorFlip,NULL,CV_CHECKBOX,0);
 	cv::createButton("HUD",onHUDPushed,NULL,CV_CHECKBOX,0);
 	cv::createButton("Crop Mode",onCropModePushed,NULL,CV_CHECKBOX,0);
+	cv::createButton("equerectangular Mode",onEqueModePushed,NULL,CV_CHECKBOX,0);
 	cv::createButton("Crop Front Sensor",onCropFrontSelect,NULL,CV_RADIOBOX,0);
 	cv::createButton("Crop Rear Sensor",onCropRearSelect,NULL,CV_RADIOBOX,0);
 
@@ -49,7 +50,7 @@ int main ()
 			mainFrame=mainFrame(cv::Rect( CROP_START_X, CROP_START_Y,CROP_WIDTH-CROP_START_X,CROP_HEIGHT-CROP_START_Y));
 			cv::displayStatusBar("test",mainWindowStatus.str());
 		}
-		else
+		else if (EQUE_MODE)
 		{
 			camera.readFrame(mainFrame,0,1);
 			if (first)
@@ -60,14 +61,14 @@ int main ()
 				computeEqueRemap(&mapX,&mapY);
 				first=false;
 			}
-			cv::remap( mainFrame, eque, mapX, mapY, CV_INTER_LINEAR, cv::BORDER_REFLECT , cv::Scalar(0,0, 0) );
-
-
-
+			cv::remap( mainFrame, mainFrame, mapX, mapY, CV_INTER_LINEAR, cv::BORDER_REFLECT , cv::Scalar(0,0, 0) );
 		}
-		cv::imshow("test",eque);
-
-		if(cv::waitKey(15)>=0)
+		else
+		{
+			camera.readFrame(mainFrame,0,1);
+		}
+			cv::imshow("test",mainFrame);
+		if(cv::waitKey(30)>=0)
 			break;
 	}
 	return 0;
@@ -181,6 +182,10 @@ void onCropModePushed(int state, void *pointer)
 		CROP_MODE=false;
 		cv::destroyWindow("test");
 	}
+}
+void onEqueModePushed(int state, void *pointer)
+{
+	EQUE_MODE = state;
 }
 
 void onCropFrontSelect(int state, void *pointer)
