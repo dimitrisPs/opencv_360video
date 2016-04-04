@@ -65,10 +65,10 @@ int main ()
 		}
 		else
 		{
-			camera.readFrame(mainFrame,0,1);
+			camera.readFrame(mainFrame,CAMERA360_SENSOR_2,1);
 		}
 			cv::imshow("test",mainFrame);
-		if(cv::waitKey(30)>=0)
+		if(cv::waitKey(33)>=0)
 			break;
 	}
 	return 0;

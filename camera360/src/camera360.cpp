@@ -34,7 +34,7 @@ Camera360::Camera360(int cameraIdx1,int cameraIdx2)
 		!this->setHue(0.5))
 	{
 		cerr<<"couldn't set correctly camera parameters"<<endl;
-		return;
+		//return;
 	}
 	if (!this->readCropParameters(CAMERA360_SENSOR_1))
 	{
@@ -424,8 +424,8 @@ void Camera360::mergeFrames()
 	else
 	{
 		//if they are not cropped will have the same resolution
-		mergedHeight=this->cameraROI1.height;
-		mergedWidth=this->cameraROI1.width;
+		mergedHeight=this->cameraInitialFrame1.rows;
+		mergedWidth=this->cameraInitialFrame1.cols*2;
 
 	}
 	cv::Rect rightResultROI(0,0,mergedWidth,mergedHeight);
