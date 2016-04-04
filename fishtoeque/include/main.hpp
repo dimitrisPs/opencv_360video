@@ -6,7 +6,7 @@
 
 #define EQUE_HEIGHT 50
 #define EQUE_WIDTH	EQUE_HEIGHT
-#define FISHEYE_ANGLE 194 * ( M_PI /180 )//3.22885912//M_PI//
+#define FISHEYE_ANGLE 184 * ( M_PI /180 )//3.22885912//M_PI//
 
 
 
