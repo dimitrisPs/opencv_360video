@@ -8,7 +8,7 @@ Camera360 camera(1,2);
 int main ()
 {
 	bool first =true;
-	cv::namedWindow("test",CV_WINDOW_NORMAL);
+	cv::namedWindow("test",CV_WINDOW_AUTOSIZE);
 	cv::Mat mainFrame;
 	cv::Mat eque;
 	cv::Mat mapX;
@@ -65,7 +65,7 @@ int main ()
 		}
 		else
 		{
-			camera.readFrame(mainFrame,CAMERA360_SENSOR_2,1);
+			camera.readFrame(mainFrame,CAMERA360_SENSOR_1,1);
 		}
 			cv::imshow("test",mainFrame);
 		if(cv::waitKey(33)>=0)
