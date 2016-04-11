@@ -1,2 +1,10 @@
 .metadata/
 /fishtoeque/*.jpg
+*.zip
+*.[o]
+*.[d]
+*.mk
+
+*.jpg
+*.cproject
+*.project
