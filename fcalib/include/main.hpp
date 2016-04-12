@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 
 #include <string>
 #include <vector>
@@ -14,6 +15,8 @@
 #include "opencv2/calib3d.hpp"
 
 namespace fs = boost::filesystem;
+using namespace std;
+
 
 #define PATTERN_WIDTH 	6
 #define PATTERN_HEIGHT	8
@@ -21,5 +24,9 @@ namespace fs = boost::filesystem;
 
 
 
-void get_all(const fs::path& root, const std::string& ext, std::vector<fs::path>& ret);
-static void calcBoardCornerPositions(cv::Size boardSize, float squareSize, std::vector<cv::Point3f>& corners);
+void get_all(const fs::path& root, const string& ext, vector<fs::path>& ret);
+static void calcBoardCornerPositions(cv::Size boardSize, float squareSize, vector<cv::Point3f>& corners);
+
+void saveGoodImagesPaths(const fs::path& root,vector<fs::path>& paths);
+
+void saveCalibResults(cv::Mat K, cv::Mat D)

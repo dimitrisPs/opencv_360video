@@ -1,7 +1,6 @@
 #include "main.hpp"
 
 
-using namespace std;
 
 
 int main ()
@@ -30,10 +29,10 @@ int main ()
 
 
 
-	for (uint imgIdx=0;imgIdx<20;++imgIdx)
+	for (uint imgIdx=0;imgIdx<jpegPaths.size();++imgIdx)
 	{
 
-		cout<<jpegPaths[imgIdx].string();;
+		cout<<jpegPaths[imgIdx].string();
 		tmpImgPath = rootFolder.string()+jpegPaths[imgIdx].string();
 		currentChessFrame=cv::imread(tmpImgPath);
 		tmpFound= cv::findChessboardCorners( currentChessFrame, patternSize,tmpPoints ,
@@ -76,6 +75,8 @@ int main ()
 
 	cv::Mat cameraMatrix = cv::Mat::eye(3, 3, CV_64F);
 	cv::Mat distCoeffs = cv::Mat::zeros(8, 1, CV_64F);
+
+
 
     int flags = 0;
     flags |= cv::fisheye::CALIB_RECOMPUTE_EXTRINSIC;
@@ -129,4 +130,49 @@ static void calcBoardCornerPositions(cv::Size boardSize, float squareSize, vecto
 	for( int i = 0; i < boardSize.height; ++i )
 		for( int j = 0; j < boardSize.width; ++j )
 			corners.push_back(cv::Point3f(j*squareSize, i*squareSize, 0));
+}
+void saveGoodImagesPaths(const fs::path& root,vector<fs::path>& paths)
+{
+	ostringstream filePath;
+	filePath<<root.string() << "goodSamples.txt";
+	ofstream myfile;
+	myfile.open (filePath.str().c_str());
+
+	for (uint i=0;i<paths.size();++i)
+	{
+		myfile<<root.string()<<paths[i].string()<<endl;
+	}
+	myfile.close();
+}
+void savePatPoints(vector<cv::Point3f>& corners)
+{
+	string filePath="./corners.txt";
+	ofstream myfile;
+	myfile.open (filePath.c_str());
+
+	for (uint i=0;i<corners.size();++i)
+	{
+		myfile<<corners[i].x<<" "<<corners[i].y<<" "<<corners[i].z<<endl;
+	}
+	myfile.close();
+}
+void saveCalibResults(cv::Mat K, cv::Mat D)
+{
+	string filePath="./calib_results.txt";
+	ofstream myfile;
+	myfile.open (filePath.c_str());
+	for (int rows=0;rows<K.rows;++rows)
+	{
+		for (int cols=0;cols<K.cols;++cols)
+		{
+			myfile<<K.at<double>(rows,cols)<<" ";
+		}
+		myfile<<"\n";
+	}
+	for (int rows=0;rows<K.rows;++rows)
+	{
+		myfile<<D.at<double>(rows)<<" ";
+	}
+
+	myfile.close();
 }
