@@ -8,4 +8,4 @@
 *.jpg
 *.cproject
 *.project
-/template*
+template/
