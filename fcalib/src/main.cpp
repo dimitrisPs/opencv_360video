@@ -21,7 +21,6 @@ int main ()
 	cv::Size patternSize(PATTERN_WIDTH,PATTERN_HEIGHT);
 	vector< vector<cv::Point2f> > patternPoints_sensor;
 	vector<cv::Point2f> tmpPoints;
-	vector <bool> patternsFound;
 	bool tmpFound;
 	string tmpImgPath;
 	int numOfFails=0;
@@ -37,7 +36,6 @@ int main ()
 		currentChessFrame=cv::imread(tmpImgPath);
 		tmpFound= cv::findChessboardCorners( currentChessFrame, patternSize,tmpPoints ,
 				  CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
-		patternsFound.push_back(tmpFound);
 		if (tmpFound)
 		{
 			cvtColor(currentChessFrame, tmpGrayFrame, cv::COLOR_BGR2GRAY);
