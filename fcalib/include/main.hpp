@@ -21,6 +21,7 @@ using namespace std;
 #define PATTERN_WIDTH 	6
 #define PATTERN_HEIGHT	8
 #define SQUARE_SIZE 	30
+#define DIGITAL_MULTIPLIER 400
 
 
 

@@ -8,9 +8,9 @@ int main ()
 
 	//read all jpeg files' paths and put it in a vector
 	vector <fs::path> jpegPaths;
-	fs::path rootFolder("/home/lary/Pictures/calib_sample_sens_3/");
+	fs::path rootFolder("/home/dimitris/Pictures/calib_sample_sens_3/");//home/dimitris/Desktop/sens4///home/dimitris/Pictures/calib_sample_sens_3
 	const string jpegExtensionStr =".jpg";
-	cv::namedWindow("img preview",cv::WINDOW_AUTOSIZE);
+	cv::namedWindow("img preview",cv::WINDOW_NORMAL);
 	int keyWaitTime;
 	bool goodSampleFound;
 
@@ -19,7 +19,7 @@ int main ()
 	{
 		cout<<"selected images file found"<<endl;
 		loadFileList((rootFolder.string() + "goodSamples.txt" ), jpegPaths);
-		keyWaitTime=300;
+		keyWaitTime=500;
 		goodSampleFound=true;
 	}
 	else
@@ -117,8 +117,26 @@ int main ()
     flags |= cv::fisheye::CALIB_RECOMPUTE_EXTRINSIC;
     flags |= cv::fisheye::CALIB_CHECK_COND;
     flags |= cv::fisheye::CALIB_FIX_SKEW;
+//    flags |= cv::fisheye::CALIB_USE_INTRINSIC_GUESS ;
+//    flags |= cv::fisheye::CALIB_FIX_K1 ;
+//    flags |= cv::fisheye::CALIB_FIX_K2 ;
+//    flags |= cv::fisheye::CALIB_FIX_K3 ;
+//    flags |= cv::fisheye::CALIB_FIX_K4 ;
 
     cv::Matx33d K;
+//    K(0,0)=25;//1.3*DIGITAL_MULTIPLIER;
+//    K(0,1)=0;
+//    K(0,2)=650;
+//
+//    K(1,0)=0;
+//    K(1,1)=K(0,0);
+//    K(1,2)=523;
+//
+//    K(2,0)=0;
+//    K(2,1)=0;
+//    K(2,2)=1;
+
+
     cv::Vec4d D;
     std::vector<cv::Vec3d> rvec;
     std::vector<cv::Vec3d> tvec;
@@ -126,9 +144,22 @@ int main ()
     cv::Mat testFrame=cv::imread(jpegPaths[0].string().c_str());
     cv::Size imgSize(testFrame.size());
 
-    cv::fisheye::calibrate(objectPoints, patternPoints_sensor, imgSize, K, D,
+    double error=cv::fisheye::calibrate(objectPoints, patternPoints_sensor, imgSize, K, D,
     		rvec, tvec, flags,cv::TermCriteria(3, 20, 1e-6));//oti einai novects exei na kanei me extrinsic parameters
+
+    cout<<"error is "<<error<<endl;
+
+
+    cv::Mat originalImage=cv::imread(jpegPaths[0].string().c_str());
+    cv::Mat persp;
+
+
+    cv::fisheye::undistortImage(originalImage, persp, K, D, cv::Mat::eye(3, 3, CV_64F),originalImage.size());
     saveCalibResults(K, D);
+    cv::namedWindow("persp",cv::WINDOW_NORMAL);
+    cv::imshow("img preview",originalImage);
+    cv::imshow("persp",persp);
+    cv::waitKey(0);
 	return 0;
 }
 
