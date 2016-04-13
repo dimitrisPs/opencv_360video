@@ -20,7 +20,7 @@ using namespace std;
 
 #define PATTERN_WIDTH 	6
 #define PATTERN_HEIGHT	8
-#define SQUARE_SIZE 	24.5
+#define SQUARE_SIZE 	30
 
 
 
@@ -32,6 +32,6 @@ void saveGoodImagesPaths(const fs::path& root,vector<fs::path>& paths);
 
 void savePatPoints(vector<vector<cv::Point2f > >& corners);
 
-void saveCalibResults(cv::Mat K, cv::Mat D);
+void saveCalibResults(cv::Matx33d K, cv::Vec4d D);
 void loadFileList(const string listPath,vector <fs::path> &paths);
 void loadCorners(const string cornerListPath,vector<vector<cv::Point2f > >& corners);

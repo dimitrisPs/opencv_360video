@@ -8,36 +8,43 @@ int main ()
 
 	//read all jpeg files' paths and put it in a vector
 	vector <fs::path> jpegPaths;
-	fs::path rootFolder("/home/dimitris/Pictures/calib_sample_sens_3/");
+	fs::path rootFolder("/home/lary/Pictures/calib_sample_sens_3/");
 	const string jpegExtensionStr =".jpg";
-
+	cv::namedWindow("img preview",cv::WINDOW_AUTOSIZE);
+	int keyWaitTime;
+	bool goodSampleFound;
 
 	//see if there is a log file for all good images
 	if ( fs::exists( rootFolder.string() + "goodSamples.txt" ) )
 	{
 		cout<<"selected images file found"<<endl;
 		loadFileList((rootFolder.string() + "goodSamples.txt" ), jpegPaths);
+		keyWaitTime=300;
+		goodSampleFound=true;
 	}
 	else
 	{
 		get_all(rootFolder, jpegExtensionStr, jpegPaths);
+		keyWaitTime=0;
+		goodSampleFound=false;
 	}
 
 	cout<<"sample images "<<endl;
-	for (uint i=0;i<jpegPaths.size();i++)
-		cout<<jpegPaths[i].string()<<endl;
 
 
 
 	vector< vector<cv::Point2f> > patternPoints_sensor;
 	cv::Size patternSize(PATTERN_WIDTH,PATTERN_HEIGHT);
 
-	if ( fs::exists( "./corners.txt" ) )
-	{
-		loadCorners("./corners.txt" , patternPoints_sensor);
-	}
-	else
-	{
+//	if (fs::exists( "./corners.txt" ) )
+//	{
+//		loadCorners("./corners.txt" , patternPoints_sensor);
+//	}
+//	else
+//	{
+
+		for (uint i=0;i<jpegPaths.size();i++)
+			cout<<jpegPaths[i].string()<<endl;
 		//perform chessboard detection for every image, delete bad images from lists
 		cv::Mat currentChessFrame;
 		cv::Mat tmpGrayFrame;
@@ -65,12 +72,17 @@ int main ()
 
 				cout<<" succeeded in corner extrusion.";
 				cv::drawChessboardCorners( currentChessFrame, patternSize, cv::Mat(tmpPoints), tmpFound );
-				cv::imshow("img",currentChessFrame);
+				cv::imshow("img preview",currentChessFrame);
 
 				cout <<"   is the extraction correct? [y/n]"<<endl;
-				usrInput=cv::waitKey(0);
-				if (usrInput=='n' || usrInput=='N')
-					tmpFound=false;
+				usrInput=cv::waitKey(keyWaitTime);
+				if (keyWaitTime==0)
+				{
+					if (usrInput=='n' || usrInput=='N')
+						tmpFound=false;
+					else
+						patternPoints_sensor.push_back(tmpPoints);
+				}
 				else
 					patternPoints_sensor.push_back(tmpPoints);
 			}
@@ -84,14 +96,10 @@ int main ()
 		}
 		cout<<numOfFails<< " images FAILED"<<endl<<(jpegPaths.size())<<" images succeeded in corner extrusion"<<endl;
 
-		saveGoodImagesPaths(rootFolder,jpegPaths);
+		if (!goodSampleFound)
+			saveGoodImagesPaths(rootFolder,jpegPaths);
 		savePatPoints(patternPoints_sensor);
-	}
-
-
-
-
-
+//	}
 
 	//construct vector with world pat points
 
@@ -114,12 +122,13 @@ int main ()
     cv::Vec4d D;
     std::vector<cv::Vec3d> rvec;
     std::vector<cv::Vec3d> tvec;
-
-    cv::Mat testFrame=cv::imread(jpegPaths[0].string());
+    cout<<"test frame "<<jpegPaths[0].string() <<endl;
+    cv::Mat testFrame=cv::imread(jpegPaths[0].string().c_str());
     cv::Size imgSize(testFrame.size());
 
     cv::fisheye::calibrate(objectPoints, patternPoints_sensor, imgSize, K, D,
     		rvec, tvec, flags,cv::TermCriteria(3, 20, 1e-6));//oti einai novects exei na kanei me extrinsic parameters
+    saveCalibResults(K, D);
 	return 0;
 }
 
@@ -190,7 +199,8 @@ void savePatPoints(vector<vector<cv::Point2f > >& corners)
 
 	myfile.close();
 }
-void saveCalibResults(cv::Mat K, cv::Mat D)
+
+void saveCalibResults(cv::Matx33d K, cv::Vec4d D)
 {
 	string filePath="./calib_results.txt";
 	ofstream myfile;
@@ -199,13 +209,13 @@ void saveCalibResults(cv::Mat K, cv::Mat D)
 	{
 		for (int cols=0;cols<K.cols;++cols)
 		{
-			myfile<<K.at<double>(rows,cols)<<" ";
+			myfile<<K(rows,cols)<<" ";
 		}
 		myfile<<"\n";
 	}
 	for (int rows=0;rows<K.rows;++rows)
 	{
-		myfile<<D.at<double>(rows)<<" ";
+		myfile<<D(rows)<<" ";
 	}
 
 	myfile.close();
