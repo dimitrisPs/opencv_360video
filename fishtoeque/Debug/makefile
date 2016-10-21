@@ -44,7 +44,7 @@ all: fishtoeque
 fishtoeque: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L/usr/local/lib -o "fishtoeque" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L/usr/local/opencv/opencv2.4.13/lib -o "fishtoeque" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
